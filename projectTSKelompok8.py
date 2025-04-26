@@ -1,118 +1,82 @@
-# Mini AES Constants
-S_BOX = [
-    [0x3, 0x4, 0x2, 0x1], 
-    [0x0, 0x3, 0x4, 0x2], 
-    [0x1, 0x0, 0x3, 0x4], 
-    [0x2, 0x1, 0x0, 0x3]
-]
+# mini_aes.py
 
-# Functions for AES operations
-def subnibbles(state):
-    """Substitute bytes using the 4-bit S-Box"""
-    for i in range(4):
-        for j in range(4):
-            # Ensure the value is within the range of the S-Box (0x0 - 0xF)
-            if state[i][j] < 0 or state[i][j] > 15:
-                raise ValueError(f"Invalid state value {state[i][j]} for SubNibbles.")
-            state[i][j] = S_BOX[state[i][j] // 4][state[i][j] % 4]
-    return state
+# S-Box 4-bit
+S_BOX = [0x9, 0x4, 0xA, 0xB, 0xD, 0x1, 0x8, 0x5, 0x6, 0x2, 0x0, 0x3, 0xC, 0xE, 0xF, 0x7]
 
-def shiftrows(state):
-    """Shift rows of the state matrix"""
-    return [state[0], [state[1][1], state[1][2], state[1][3], state[1][0]],
-            [state[2][2], state[2][3], state[2][0], state[2][1]], 
-            [state[3][3], state[3][0], state[3][1], state[3][2]]]
+# Invers S-Box jika perlu (opsional)
+INV_S_BOX = [S_BOX.index(i) for i in range(16)]
 
-def mixcolumns(state):
-    """Mix columns using a simplified operation in GF(2^4)"""
-    matrix = [[0x2, 0x3, 0x1, 0x1], [0x1, 0x2, 0x3, 0x1], [0x1, 0x1, 0x2, 0x3], [0x3, 0x1, 0x1, 0x2]]
-    result = [[0]*4 for _ in range(4)]
-    for i in range(4):
-        for j in range(4):
-            result[i][j] = sum(matrix[i][k] * state[k][j] for k in range(4)) % 0x10
-    return result
+# Galois Field Multiplication for GF(2^4)
+def gf_mult(a, b):
+    p = 0
+    for _ in range(4):
+        if b & 1:
+            p ^= a
+        carry = a & 0x8
+        a <<= 1
+        if carry:
+            a ^= 0b10011
+        b >>= 1
+    return p & 0xF
 
-def addroundkey(state, key):
-    """XOR each byte of state with the corresponding byte of the key"""
-    for i in range(4):
-        for j in range(4):
-            state[i][j] ^= key[i][j]  # XOR with key
-    return state
+def sub_nibbles(state):
+    return [S_BOX[nibble] for nibble in state]
+
+def shift_rows(state):
+    return [state[0], state[3], state[2], state[1]]
+
+def mix_columns(state):
+    return [
+        gf_mult(1, state[0]) ^ gf_mult(4, state[1]),
+        gf_mult(4, state[0]) ^ gf_mult(1, state[1]),
+        gf_mult(1, state[2]) ^ gf_mult(4, state[3]),
+        gf_mult(4, state[2]) ^ gf_mult(1, state[3]),
+    ]
+
+def add_round_key(state, round_key):
+    return [s ^ k for s, k in zip(state, round_key)]
 
 def key_expansion(key):
-    """Expand the 16-bit key into a 4x4 matrix of round keys"""
-    round_keys = [
-        [((key >> 12) & 0xF), ((key >> 8) & 0xF), ((key >> 4) & 0xF), (key & 0xF)],
-        [((key >> 20) & 0xF), ((key >> 16) & 0xF), ((key >> 12) & 0xF), ((key >> 8) & 0xF)],
-        [((key >> 28) & 0xF), ((key >> 24) & 0xF), ((key >> 20) & 0xF), ((key >> 16) & 0xF)],
-        [((key >> 4) & 0xF), ((key >> 0) & 0xF), ((key >> 28) & 0xF), ((key >> 24) & 0xF)]
-    ]
-    return round_keys
+    w = [(key >> 12) & 0xF, (key >> 8) & 0xF, (key >> 4) & 0xF, key & 0xF]
+    rcon1 = 0b1000
+    rcon2 = 0b0011
 
-# Function to convert plaintext string to a 4x4 state matrix
-def text_to_state(text):
-    """Convert plaintext text into a 4x4 state matrix"""
-    # Convert text to bytes (UTF-8)
-    text_bytes = text.encode('utf-8')
-    # Make sure to pad or truncate to 16 bytes (for 16-bit block size)
-    text_bytes = text_bytes[:16] + b'\x00' * (16 - len(text_bytes))  # pad if less than 16 bytes
+    w.append(S_BOX[w[3]] ^ rcon1 ^ w[0])
+    w.append(w[1] ^ w[4])
+    w.append(w[2] ^ w[5])
+    w.append(w[3] ^ w[6])
 
-    # Convert bytes into 4x4 state matrix
-    state = []
-    for i in range(4):
-        row = []
-        for j in range(4):
-            byte = text_bytes[i * 4 + j]
-            # Split byte into two nibbles (4-bit values)
-            high_nibble = byte >> 4
-            low_nibble = byte & 0xF
-            row.append(high_nibble)
-            row.append(low_nibble)
-        state.append(row)
-    return state
+    w.append(S_BOX[w[7]] ^ rcon2 ^ w[4])
+    w.append(w[5] ^ w[8])
+    w.append(w[6] ^ w[9])
+    w.append(w[7] ^ w[10])
 
-# Main encryption function
+    return [w[0:4], w[4:8], w[8:12]]  # 3 round keys
+
+def int_to_state(n):
+    return [(n >> 12) & 0xF, (n >> 8) & 0xF, (n >> 4) & 0xF, n & 0xF]
+
+def state_to_int(state):
+    return (state[0] << 12) | (state[1] << 8) | (state[2] << 4) | state[3]
+
 def encrypt(plaintext, key):
-    """Encrypt the given plaintext with the given key"""
-    state = text_to_state(plaintext)  # Convert text to 4x4 matrix
-    
-    key_matrix = key_expansion(key)
-    
-    state = addroundkey(state, key_matrix)
+    state = int_to_state(plaintext)
+    round_keys = key_expansion(key)
 
-    for round in range(3):  # Simplified to 3 rounds
-        state = subnibbles(state)
-        state = shiftrows(state)
-        state = mixcolumns(state)
-        state = addroundkey(state, key_matrix)
+    output_steps = []
+    output_steps.append(("Initial State", state.copy()))
+    state = add_round_key(state, round_keys[0])
+    output_steps.append(("After AddRoundKey (Round 0)", state.copy()))
 
-    ciphertext = 0
-    for i in range(4):
-        for j in range(4):
-            ciphertext |= state[i][j] << (8 * (3-i))
-    return ciphertext
+    for i in range(1, 3):
+        state = sub_nibbles(state)
+        output_steps.append((f"After SubNibbles (Round {i})", state.copy()))
+        state = shift_rows(state)
+        output_steps.append((f"After ShiftRows (Round {i})", state.copy()))
+        if i != 2:  # no MixColumns in final round
+            state = mix_columns(state)
+            output_steps.append((f"After MixColumns (Round {i})", state.copy()))
+        state = add_round_key(state, round_keys[i])
+        output_steps.append((f"After AddRoundKey (Round {i})", state.copy()))
 
-# Main function to handle terminal input
-def main():
-    # Input plaintext and key from the terminal
-    plaintext = input("Enter plaintext (text): ").strip()
-    key = input("Enter key (16-bit Hex): ").strip()
-
-    try:
-        if not plaintext or not key:
-            raise ValueError("Plaintext and Key cannot be empty.")
-        
-        if len(key) != 4 or not all(c in '0123456789ABCDEF' for c in key.upper()):
-            raise ValueError("Key must be a valid 16-bit hexadecimal value.")
-
-        # Convert Hex Key to Integer
-        key = int(key, 16)
-
-        # Encrypt the plaintext (which is a string)
-        ciphertext = encrypt(plaintext, key)
-        print(f"Ciphertext: {hex(ciphertext)}")
-    except ValueError as e:
-        print(f"Error: {e}")
-
-if __name__ == "__main__":
-    main()
+    return state_to_int(state), output_steps
