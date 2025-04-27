@@ -139,3 +139,64 @@ def avalanche_test(plaintext, key):
         results.append((i, modified_plaintext, new_ciphertext, changed_bits))
 
     return results
+
+def encrypt_ecb(plaintext_blocks, key):
+    """Encrypt multiple blocks using ECB mode."""
+    ciphertext_blocks = []
+    all_steps = []
+    for block in plaintext_blocks:
+        cipher_block, steps = encrypt(block, key)
+        ciphertext_blocks.append(cipher_block)
+        all_steps.append(steps)
+    return ciphertext_blocks, all_steps
+
+def decrypt_ecb(ciphertext_blocks, key):
+    """Decrypt multiple blocks using ECB mode."""
+    plaintext_blocks = []
+    all_steps = []
+    for block in ciphertext_blocks:
+        plain_block, steps = decrypt(block, key)
+        plaintext_blocks.append(plain_block)
+        all_steps.append(steps)
+    return plaintext_blocks, all_steps
+
+def encrypt_cbc(plaintext_blocks, key, iv):
+    """Encrypt multiple blocks using CBC mode."""
+    ciphertext_blocks = []
+    all_steps = []
+    previous = iv
+    for block in plaintext_blocks:
+        block ^= previous  # XOR dengan previous ciphertext (atau IV untuk blok pertama)
+        cipher_block, steps = encrypt(block, key)
+        ciphertext_blocks.append(cipher_block)
+        all_steps.append(steps)
+        previous = cipher_block
+    return ciphertext_blocks, all_steps
+
+def decrypt_cbc(ciphertext_blocks, key, iv):
+    """Decrypt multiple blocks using CBC mode."""
+    plaintext_blocks = []
+    all_steps = []
+    previous = iv
+    for block in ciphertext_blocks:
+        plain_block, steps = decrypt(block, key)
+        plain_block ^= previous  # XOR hasil dekripsi dengan previous ciphertext (atau IV)
+        plaintext_blocks.append(plain_block)
+        all_steps.append(steps)
+        previous = block
+    return plaintext_blocks, all_steps
+
+def split_blocks(data, block_size=16):
+    """Split integer data into blocks of block_size bits."""
+    blocks = []
+    while data:
+        blocks.insert(0, data & (2**block_size - 1))
+        data >>= block_size
+    return blocks
+
+def merge_blocks(blocks, block_size=16):
+    """Merge blocks back into a single integer."""
+    data = 0
+    for block in blocks:
+        data = (data << block_size) | block
+    return data
