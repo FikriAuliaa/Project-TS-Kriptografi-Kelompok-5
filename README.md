@@ -34,7 +34,7 @@ Mini-AES adalah versi sederhana dari algoritma Advanced Encryption Standard (AES
 | 3  | 0xAAAA    | 0x5555  | [Tergantung hasil]  |
 
 ## 📈 Flowchart
-(Tambahkan flowchart algoritma dan key expansion di GitHub: bisa pakai draw.io atau Mermaid)
+(Tambah flowchart algoritma dan key expansion)
 
 ## ✅ Kelebihan & Keterbatasan Mini-AES
 
