@@ -37,29 +37,3 @@ if st.button("Run Test Cases"):
         key = int(key_hex, 16)
         ct, steps = encrypt(pt, key)
         st.write(f"**Plaintext: {pt_hex}, Key: {key_hex} → Ciphertext: 0x{ct:04X}**")
-
-def export_to_file(filename, plaintext, ciphertext, mode, steps_log=None):
-    """Save plaintext, ciphertext, mode, and log steps into a file."""
-    with open(filename, 'w') as f:
-        f.write(f"Mode: {mode}\n")
-        f.write(f"Plaintext: 0x{plaintext:X}\n")
-        f.write(f"Ciphertext: 0x{ciphertext:X}\n")
-        if steps_log:
-            f.write("\nSteps Log:\n")
-            for block_idx, steps in enumerate(steps_log):
-                f.write(f"Block {block_idx}:\n")
-                for title, state in steps:
-                    f.write(f"{title}: {[hex(x) for x in state]}\n")
-
-def import_from_file(filename):
-    """Load plaintext and ciphertext from a file."""
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-    plaintext = None
-    ciphertext = None
-    for line in lines:
-        if line.startswith("Plaintext:"):
-            plaintext = int(line.split(":")[1].strip(), 16)
-        elif line.startswith("Ciphertext:"):
-            ciphertext = int(line.split(":")[1].strip(), 16)
-    return plaintext, ciphertext
