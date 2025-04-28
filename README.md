@@ -29,9 +29,9 @@ Mini-AES adalah versi sederhana dari algoritma Advanced Encryption Standard (AES
 
 | No | Plaintext | Key     | Ciphertext (Output) |
 |----|-----------|---------|---------------------|
-| 1  | 0x1234    | 0x5678  | [Tergantung hasil]  |
-| 2  | 0x0000    | 0xFFFF  | [Tergantung hasil]  |
-| 3  | 0xAAAA    | 0x5555  | [Tergantung hasil]  |
+| 1  | 0x1234    | 0x5678  | 0x90DE  |
+| 2  | 0x0000    | 0xFFFF  | 0x2ED1  |
+| 3  | 0xAAAA    | 0x5555  | 0x0055  |
 
 ## 📈 Flowchart
 
