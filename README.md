@@ -36,10 +36,40 @@ Mini-AES adalah versi sederhana dari algoritma Advanced Encryption Standard (AES
 ## 📈 Flowchart
 
 ### Mini-AES Algorithm
-![Mini-AES Flowchart](docs/flowchart_mini_aes.png)
+
+Plaintext (16-bit)
+       ↓
+[ AddRoundKey (Round 0) ]
+       ↓
+[ SubNibbles ]
+       ↓
+[ ShiftRows ]
+       ↓
+[ MixColumns ]
+       ↓
+[ AddRoundKey (Round 1) ]
+       ↓
+[ SubNibbles ]
+       ↓
+[ ShiftRows ]
+       ↓
+[ AddRoundKey (Round 2) ]
+       ↓
+→ Ciphertext
+
 
 ### Key Expansion
-![Key Expansion Flowchart](docs/flowchart_key_expansion.png)
+
+Key (16-bit)
+       ↓
+[ S-Box Substitution ]
+       ↓
+[ XOR with RCON ]
+       ↓
+[ Generate W0 – W11 ]
+       ↓
+→ RoundKey 0, RoundKey 1, RoundKey 2
+
 
 
 ## ✅ Kelebihan & Keterbatasan Mini-AES
