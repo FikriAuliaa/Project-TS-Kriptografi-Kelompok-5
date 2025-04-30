@@ -59,3 +59,17 @@ export_to_file("output_cbc.txt", pt, merged_ct_cbc, mode="CBC", steps_log=steps_
 # --------- Import from File ---------
 plaintext_from_file, ciphertext_from_file = import_from_file("output_ecb.txt")
 print(f"\n[Import from file] Plaintext: 0x{plaintext_from_file:X}, Ciphertext: 0x{ciphertext_from_file:X}")
+
+mode, plaintext, key, iv = load_input_file("input_example.txt")
+blocks = split_blocks(plaintext)
+
+if mode == "ECB":
+    ct_blocks, steps = encrypt_ecb(blocks, key)
+elif mode == "CBC":
+    ct_blocks, steps = encrypt_cbc(blocks, key, iv)
+else:
+    raise ValueError("Unsupported mode")
+
+ciphertext = merge_blocks(ct_blocks)
+print(f"Ciphertext: 0x{ciphertext:X}")
+
