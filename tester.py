@@ -30,7 +30,7 @@ results = avalanche_test(pt, key)
 for bit_index, new_pt, new_ct, changed_bits in results:
     print(f"Bit {bit_index:2d} flipped -> New PT = 0x{new_pt:04X}, CT = 0x{new_ct:04X}, Changed Bits: {changed_bits}")
 
-# --------- ECB Mode ---------
+# ECB Mode
 print("\n--- ECB Mode ---")
 blocks = split_blocks(pt)
 ct_blocks_ecb, steps_ecb = encrypt_ecb(blocks, key)
@@ -41,7 +41,7 @@ pt_blocks_ecb, _ = decrypt_ecb(ct_blocks_ecb, key)
 merged_pt_ecb = merge_blocks(pt_blocks_ecb)
 print(f"[Decrypt ECB] Plaintext: 0x{merged_pt_ecb:X}")
 
-# --------- CBC Mode ---------
+# CBC Mode 
 print("\n--- CBC Mode ---")
 blocks = split_blocks(pt)
 ct_blocks_cbc, steps_cbc = encrypt_cbc(blocks, key, iv)
@@ -52,24 +52,35 @@ pt_blocks_cbc, _ = decrypt_cbc(ct_blocks_cbc, key, iv)
 merged_pt_cbc = merge_blocks(pt_blocks_cbc)
 print(f"[Decrypt CBC] Plaintext: 0x{merged_pt_cbc:X}")
 
-# --------- Export to File ---------
+# Export to File
 export_to_file("output_ecb.txt", pt, merged_ct_ecb, mode="ECB", steps_log=steps_ecb)
 export_to_file("output_cbc.txt", pt, merged_ct_cbc, mode="CBC", steps_log=steps_cbc)
 
-# --------- Import from File ---------
+# Import from File
 plaintext_from_file, ciphertext_from_file = import_from_file("output_ecb.txt")
 print(f"\n[Import from file] Plaintext: 0x{plaintext_from_file:X}, Ciphertext: 0x{ciphertext_from_file:X}")
 
-mode, plaintext, key, iv = load_input_file("input_example.txt")
+# Load from file
+mode, plaintext, key, iv, _ = import_from_file(filename)
 blocks = split_blocks(plaintext)
 
 if mode == "ECB":
     ct_blocks, steps = encrypt_ecb(blocks, key)
+    pt_blocks, _ = decrypt_ecb(ct_blocks, key)
 elif mode == "CBC":
     ct_blocks, steps = encrypt_cbc(blocks, key, iv)
+    pt_blocks, _ = decrypt_cbc(ct_blocks, key, iv)
 else:
     raise ValueError("Unsupported mode")
 
 ciphertext = merge_blocks(ct_blocks)
-print(f"Ciphertext: 0x{ciphertext:X}")
+recovered_pt = merge_blocks(pt_blocks)
 
+print(f"[FILE] Mode: {mode}")
+print(f"Plaintext: 0x{plaintext:X}")
+print(f"Ciphertext: 0x{ciphertext:X}")
+print(f"Recovered Plaintext: 0x{recovered_pt:X}")
+if mode == "CBC":
+    print(f"IV            : 0x{iv:X}")
+    print(f"Ciphertext    : 0x{ciphertext:X}")
+    print(f"Decrypted     : 0x{recovered_pt:X}")
