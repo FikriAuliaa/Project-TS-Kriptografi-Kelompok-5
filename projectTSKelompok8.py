@@ -215,14 +215,27 @@ def export_to_file(filename, plaintext, ciphertext, mode, steps_log=None):
                     f.write(f"{title}: {[hex(x) for x in state]}\n")
 
 def import_from_file(filename):
-    """Load plaintext and ciphertext from a file."""
+    """Load mode, plaintext, key, IV, and ciphertext from file."""
     with open(filename, 'r') as f:
         lines = f.readlines()
+
+    mode = None
     plaintext = None
     ciphertext = None
+    key = None
+    iv = 0  # default value
+
     for line in lines:
-        if line.startswith("Plaintext:"):
+        if line.startswith("Mode:"):
+            mode = line.split(":")[1].strip()
+        elif line.startswith("Plaintext:"):
             plaintext = int(line.split(":")[1].strip(), 16)
         elif line.startswith("Ciphertext:"):
             ciphertext = int(line.split(":")[1].strip(), 16)
-    return plaintext, ciphertext
+        elif line.startswith("Key:"):
+            key = int(line.split(":")[1].strip(), 16)
+        elif line.startswith("IV:"):
+            iv = int(line.split(":")[1].strip(), 16)
+
+    return mode, plaintext, key, iv, ciphertext
+
